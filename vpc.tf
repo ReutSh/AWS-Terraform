@@ -62,52 +62,15 @@ resource aws_subnet "private_subnet" {
 vpc_id = aws_vpc.Reut_vpc.id
 cidr_block = element(var.subnets_cidr_private, count.index)
 availability_zone = element(var.azs ,count.index)
+  tags = {
+  Name = "private_subnet-${count.index}"  
   }
-}
+  }
 
-
-
-
-resource aws_route_table "public_rt" {
-vpc_id = aws_vpc.Reut_vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.reut_igw1.id
-     }
-   tags = {
-    Name = "publicRouteTable"
-   }
-}
-
-# Route table association with public subnets
-resource aws_route_table_association "public" {
-   count = length(var.subnets_cidr_public)
-   subnet_id      = element(aws_subnet.Subnet.*.id, count.index)
-   route_table_id = aws_route_table.public_rt.id
- }
 
 #Elastic IP
 resource aws_eip "nat" {
 vpc = true
-}
-
-
-
-#Nat gatways for the private subnets
-resource "aws_nat_gateway" "gw_Nat1" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = "10.20.1.0/24"
-  tags = {
-    Name = "gw Nat1"
-  }
-}
-
-resource "aws_nat_gateway" "gw_Nat2" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = "10.20.2.0/24"
-  tags = {
-    Name = "gw Nat2"
-  }
 }
 
 #Web server instances
@@ -155,11 +118,7 @@ resource "aws_security_group_rule" "nginx_http_acess" {
   to_port           = 80
   type              = "ingress"
   cidr_blocks       = ["0.0.0.0/0"]
-  	tags = {
-    Name = "nginx_inbound_rule"
   }
-}
-
 
 resource "aws_security_group_rule" "nginx_outbound_anywhere" {
   description = "allow outbound traffic to anywhere"
@@ -169,10 +128,8 @@ resource "aws_security_group_rule" "nginx_outbound_anywhere" {
   to_port = 0
   type = "egress"
   cidr_blocks = ["0.0.0.0/0"]
-    tags = {
-    Name = "nginx_outbond_rule"
  }
-}
+
   resource "aws_eip" "pub_ip" {
   count = 2
   instance = aws_instance.Reut_terraform_test[count.index]
@@ -193,24 +150,17 @@ resource "aws_elb" "reutlb" {
   }
 
   listener {
-    instance_port     = 8000
+    instance_port     = 80
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
-  }
-
-  listener {
-    instance_port      = 8000
-    instance_protocol  = "http"
-    lb_port            = 443
-    lb_protocol        = "https"
   }
 
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 3
-    target              = "HTTP:8000/"
+    target              = "HTTP:80/"
     interval            = 30
   }
   instances                   = aws_instance.Reut_terraform_test[count.index]

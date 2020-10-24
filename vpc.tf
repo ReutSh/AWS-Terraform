@@ -13,11 +13,6 @@ type = string
 default = "10.20.0.0/16"
 }
 
-variable "subnets_cidr" {
-type = list  
-default = ["10.20.1.0/24", "10.20.2.0/24", "10.20.30.0/24", "10.20.40.0/24"]
-}  
-
 variable "subnets_cidr_public" {
 type = list
 default = ["10.20.1.0/24", "10.20.2.0/24"]
@@ -53,14 +48,24 @@ Name = "main_igw"
 
 # Subnets : public
 resource aws_subnet "Subnet" {
-count = length(var.subnets_cidr)
+count = length(var.subnets_cidr_public)
 vpc_id = aws_vpc.Reut_vpc.id
-cidr_block = element(var.subnets_cidr, count.index)
+cidr_block = element(var.subnets_cidr_public, count.index)
 availability_zone = element(var.azs ,count.index)
   tags = {
     Name = "Subnet-${count.index+1}"
   }
 }
+
+#Subnets : private
+resource aws_subnet "private_subnet" {
+vpc_id = aws_vpc.Reut_vpc.id
+cidr_block = element(var.subnets_cidr_private, count.index)
+availability_zone = element(var.azs ,count.index)
+  }
+}
+
+
 
 
 resource aws_route_table "public_rt" {
@@ -89,11 +94,19 @@ vpc = true
 
 
 #Nat gatways for the private subnets
-resource "aws_nat_gateway" "gw_Nat" {
+resource "aws_nat_gateway" "gw_Nat1" {
   allocation_id = aws_eip.nat.id
   subnet_id     = "10.20.1.0/24"
   tags = {
-    Name = "gw Nat"
+    Name = "gw Nat1"
+  }
+}
+
+resource "aws_nat_gateway" "gw_Nat2" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = "10.20.2.0/24"
+  tags = {
+    Name = "gw Nat2"
   }
 }
 
@@ -129,20 +142,43 @@ resource "aws_instance" "Reut_terraform_test" {
   }
 #Security Group 
 
-module "web_server_sg" {
-  source = "terraform-aws-modules/security-group/aws//modules/http-80"
+resource "aws_security_group" "nginx_instnaces_access" {
+  vpc_id = aws_vpc.Reut_vpc.id
+  name   = "nginx-access" 
+  }
 
-  name        = "web-server"
-  description = "Security group for web-server with HTTP ports open within VPC"
-  vpc_id      = aws_vpc.Reut_vpc.id
-  ingress_cidr_blocks = var.subnets_cidr_public
+resource "aws_security_group_rule" "nginx_http_acess" {
+  description       = "allow http access from anywhere"
+  from_port         = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.nginx_instnaces_access.id
+  to_port           = 80
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+  	tags = {
+    Name = "nginx_inbound_rule"
+  }
 }
 
-resource "aws_eip" "pub_ip" {
+
+resource "aws_security_group_rule" "nginx_outbound_anywhere" {
+  description = "allow outbound traffic to anywhere"
+  from_port = 0
+  protocol = "-1"
+  security_group_id = aws_security_group.nginx_instnaces_access.id
+  to_port = 0
+  type = "egress"
+  cidr_blocks = ["0.0.0.0/0"]
+    tags = {
+    Name = "nginx_outbond_rule"
+ }
+}
+  resource "aws_eip" "pub_ip" {
   count = 2
   instance = aws_instance.Reut_terraform_test[count.index]
   vpc      = true
-}
+  }
+
 
 #Load Balancer
 
@@ -177,7 +213,6 @@ resource "aws_elb" "reutlb" {
     target              = "HTTP:8000/"
     interval            = 30
   }
-  count = 2
   instances                   = aws_instance.Reut_terraform_test[count.index]
   cross_zone_load_balancing   = true
   idle_timeout                = 400

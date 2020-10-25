@@ -1,4 +1,5 @@
 apt update
 apt install -y nginx
-ssh ubuntu@elasti 
+ssh 
+ssh
 systemctl restart nginx

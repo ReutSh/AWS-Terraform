@@ -24,7 +24,7 @@ resource "aws_elb" "reutlb" {
     target              = "HTTP:80/"
     interval            = 30
   }
-  instances                   = aws_instance.Reut_terraform_test[count.index]
+  instances                   = aws_instance.Reut_test[count.index]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true

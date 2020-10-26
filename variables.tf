@@ -19,5 +19,5 @@ variable "subnets_cidr_private" {
 }
 
 variable "key_name" {
-  default = "opsschool"
+  default = "Reut"
 }

@@ -33,7 +33,7 @@ availability_zone = element(var.azs ,count.index)
 }
 
 #Subnets : private
-resource aws_subnet "private_subnet" {
+resource aws_subnet "private_subnet-${count.index}" {
 vpc_id = aws_vpc.Reut_vpc.id
 cidr_block = element(var.subnets_cidr_private, count.index)
 availability_zone = element(var.azs ,count.index)
@@ -41,6 +41,19 @@ availability_zone = element(var.azs ,count.index)
   Name = "private_subnet-${count.index}"  
   }
 }
+
+resource "aws_subnet" "public" {
+  count                   = length(var.public_subnet)
+  cidr_block              = var.public_subnet[count.index]
+  vpc_id                  = aws_vpc.vpc.id
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+}
+
+
+
+
+
+
 
 
 #Elastic IP

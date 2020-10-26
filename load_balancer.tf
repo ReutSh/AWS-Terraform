@@ -3,13 +3,6 @@
 resource "aws_elb" "reutlb" {
   name               = "reutlb"
   availability_zones = var.azs
-
-  access_logs {
-    bucket        = "reut"
-    bucket_prefix = "lb"
-    interval      = 60
-  }
-
   listener {
     instance_port     = 80
     instance_protocol = "http"
@@ -23,8 +16,9 @@ resource "aws_elb" "reutlb" {
     timeout             = 3
     target              = "HTTP:80/"
     interval            = 30
+    path                = "/"
   }
-  instances                   = aws_instance.Reut_test[count.index]
+  instances                   = aws_instance.nginx.*.id
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true

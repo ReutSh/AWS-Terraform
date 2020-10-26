@@ -1,4 +1,4 @@
 provider "aws" {
-  profile = "ops-school"
+  profile = "reut"
   region  = var.aws_region
 }

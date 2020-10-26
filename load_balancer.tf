@@ -16,9 +16,8 @@ resource "aws_elb" "reutlb" {
     timeout             = 3
     target              = "HTTP:80/"
     interval            = 30
-    path                = "/"
   }
-  instances                   = aws_instance.nginx.*.id
+  instances                   = aws_instance.reut_db.*.id
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true

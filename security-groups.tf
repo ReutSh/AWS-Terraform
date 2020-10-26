@@ -2,7 +2,7 @@
 #Security Group 
 
 resource "aws_security_group" "nginx_instnaces_access" {
-  vpc_id = aws_vpc.Reut_vpc.id
+  vpc_id = aws_vpc.reut_vpc.id
   name   = "nginx-access" 
   }
 

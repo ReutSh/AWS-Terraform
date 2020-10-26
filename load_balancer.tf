@@ -1,8 +1,11 @@
 #Load Balancer
 
-resource "aws_elb" "reutlb" {
-  name               = "reutlb"
-  availability_zones = var.azs
+resource "aws_elb" "nginx" {
+  name      = "nginx-elb"
+  subnets   = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id]
+  instances = [aws_instance.nginx[0].id, aws_instance.nginx[1].id]
+  security_groups = [aws_security_group.nginx_instnaces_access.id]
+
   listener {
     instance_port     = 80
     instance_protocol = "http"
@@ -17,13 +20,8 @@ resource "aws_elb" "reutlb" {
     target              = "HTTP:80/"
     interval            = 30
   }
-  instances                   = aws_instance.reut_db.*.id
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
-  connection_draining         = true
-  connection_draining_timeout = 400
 
   tags = {
-    Name = "reutlb"
+    Name = "nginx-elb"
   }
 }

@@ -10,6 +10,16 @@ resource "aws_security_group" "nginx_instnaces_access" {
   }
 }
 
+resource "aws_security_group_rule" "nginx_ssh_acess" {
+  description       = "allow ssh access from anywhere"
+  from_port         = 22
+  protocol          = "tcp"
+  security_group_id = aws_security_group.nginx_instnaces_access.id
+  to_port           = 22
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
 resource "aws_security_group_rule" "nginx_http_acess" {
   description       = "allow http access from anywhere"
   from_port         = 80
